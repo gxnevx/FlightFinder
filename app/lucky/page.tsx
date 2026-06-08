@@ -1,113 +1,76 @@
 "use client";
 
 import { useState } from "react";
-import { Gauge } from "@/components/instruments";
-import { CountUp, Reveal } from "@/components/motion";
-import { Eyebrow, Toggle, fmtBrl } from "@/components/ui";
+import AgentProgressLoader from "@/components/AgentProgressLoader";
+import DataQualityBadge from "@/components/DataQualityBadge";
+import { GoldDepartureCard, LuckyRevealCard, ProofPanel } from "@/components/flight-cards";
+import { Eyebrow } from "@/components/ui";
+import type { LuckyDeal } from "@/lib/types";
 
-const brl = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
-
-function Deal({ d, hero }: { d: any; hero?: boolean }) {
-  if (hero) {
-    return (
-      <Reveal className="grid items-center gap-10 sm:grid-cols-[1fr_auto]">
-        <div>
-          <Eyebrow>pqp, olha isso</Eyebrow>
-          <div className="mt-3 text-5xl font-semibold tracking-tightest text-ink sm:text-6xl">{d.destinationName}</div>
-          <div className="mt-2 text-sm text-ink-faint">{d.origin} → {d.destination} · {d.startDate} a {d.endDate}</div>
-          <div className="mt-6 text-4xl font-semibold tracking-tightest text-ink"><CountUp value={d.totalPriceBrl} format={brl} /></div>
-          {d.percentBelowTypical != null && <div className="mt-1.5 text-sm text-signal-good">{d.percentBelowTypical}% abaixo do típico · {d.urgency}</div>}
-          {d.caveats?.length > 0 && (
-            <ul className="mt-5 space-y-1 text-sm text-ink-faint">
-              {d.caveats.map((c: string, i: number) => <li key={i}>{c}</li>)}
-            </ul>
-          )}
-        </div>
-        <Gauge value={d.dealScore} label="deal score" tone={d.dealScore >= 70 ? "good" : d.dealScore >= 45 ? "warn" : "bad"} />
-      </Reveal>
-    );
-  }
-  return (
-    <div className="hair flex items-center justify-between gap-6 py-5">
-      <div>
-        <div className="text-lg text-ink">{d.destinationName} <span className="text-ink-faint">({d.destination})</span></div>
-        <div className="text-sm text-ink-faint">{d.startDate} a {d.endDate}</div>
-      </div>
-      <div className="text-right">
-        <div className="font-semibold text-ink">{fmtBrl(d.totalPriceBrl)}</div>
-        <div className="text-sm text-ink-faint">score {d.dealScore}{d.percentBelowTypical != null ? ` · ${d.percentBelowTypical}% abaixo` : ""}</div>
-      </div>
-    </div>
-  );
+interface LuckyResponse {
+  headline: LuckyDeal | null;
+  almostDeals: LuckyDeal[];
+  honestMessage: string | null;
+  dataQuality: LuckyDeal["dataQuality"] | "unavailable";
+  sources: string[];
+  checkedAt: string;
+  error?: string;
 }
 
 export default function LuckyPage() {
-  const [f, setF] = useState<any>({ window: 60, type: "any", budgetBrl: "", aggressive: true });
   const [loading, setLoading] = useState(false);
-  const [res, setRes] = useState<any>(null);
+  const [result, setResult] = useState<LuckyResponse | null>(null);
 
-  async function go() {
+  async function reveal() {
     setLoading(true);
-    setRes(null);
+    setResult(null);
     try {
-      const body = { ...f, budgetBrl: f.budgetBrl ? +f.budgetBrl : null };
-      const r = await fetch("/api/lucky", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      setRes(await r.json());
+      const response = await fetch("/api/lucky", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ window: 60, type: "any", aggressive: true }),
+      });
+      setResult(await response.json());
     } catch {
-      setRes({ error: "falhou" });
+      setResult({ headline: null, almostDeals: [], honestMessage: null, dataQuality: "unavailable", sources: [], checkedAt: new Date().toISOString(), error: "Não foi possível consultar as fontes agora." });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
-  const seg = (opts: { v: any; l: string }[], key: string) => (
-    <div className="flex flex-wrap gap-2">
-      {opts.map((o) => (
-        <button
-          key={String(o.v)}
-          onClick={() => setF((s: any) => ({ ...s, [key]: o.v }))}
-          className={`chip ${f[key] === o.v ? "border-ink bg-ink text-paper" : "border-line text-ink-soft hover:border-ink/40"}`}
-        >
-          {o.l}
-        </button>
-      ))}
-    </div>
-  );
-
+  const almostDeals = result?.almostDeals || [];
   return (
     <div className="space-y-12 pt-16">
-      <div>
+      <header className="max-w-2xl">
         <Eyebrow>Estou com sorte</Eyebrow>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tightest text-ink sm:text-5xl">Me encontre uma viagem imperdível</h1>
-      </div>
-      <div className="space-y-7">
-        <div><span className="label">Janela</span>{seg([{ v: 7, l: "7 dias" }, { v: 30, l: "30" }, { v: 60, l: "60" }, { v: 90, l: "90" }], "window")}</div>
-        <div><span className="label">Tipo</span>{seg([{ v: "any", l: "Qualquer" }, { v: "south-america", l: "América do Sul" }, { v: "europe", l: "Europa" }, { v: "asia", l: "Ásia" }, { v: "beach", l: "Praia" }], "type")}</div>
-        <div className="grid gap-6 sm:max-w-md sm:grid-cols-2 sm:items-end">
-          <label className="block"><span className="label">Orçamento máx (R$)</span><input className="field" value={f.budgetBrl} onChange={(e) => setF((s: any) => ({ ...s, budgetBrl: e.target.value }))} placeholder="opcional" /></label>
-          <div className="pb-3"><Toggle checked={f.aggressive} onChange={(v) => setF((s: any) => ({ ...s, aggressive: v }))} label="Viagem agressiva" /></div>
-        </div>
-        <button onClick={go} disabled={loading} className="btn">{loading ? "Caçando…" : "Me surpreenda"}</button>
-      </div>
+        <h1 className="mt-4 text-4xl font-semibold tracking-tightest text-ink sm:text-5xl">Procure uma oportunidade sem inventar ouro.</h1>
+        <p className="mt-5 leading-relaxed">Uma pérola só aparece quando estiver validada ao vivo. Cache aparece como candidato; ausência de fonte aparece como estado vazio.</p>
+        <button className="btn mt-8" onClick={reveal} disabled={loading}>{loading ? "Consultando…" : "Procurar oportunidade"}</button>
+      </header>
 
-      {loading && <div className="h-16 w-1/2 animate-pulse rounded bg-line" />}
-      {res?.error && <p className="text-signal-bad">{res.error}</p>}
-      {res && !loading && (
-        <div className="rise space-y-8">
-          {res.headline && <Deal d={res.headline} hero />}
-          {res.honestMessage && <p className="max-w-2xl text-signal-warn">{res.honestMessage}</p>}
-          {(res.almostDeals || []).length > 0 && (
+      {loading && <AgentProgressLoader stages={["Consultando fontes de descoberta", "Organizando candidatos", "Verificando qualidade do dado"]} />}
+      {result?.error && <p className="text-signal-bad">{result.error}</p>}
+
+      {result && !loading && (
+        <section className="space-y-8">
+          {result.honestMessage && <div className="rounded-xl border border-line bg-white/50 p-4 text-sm text-ink-soft">{result.honestMessage}</div>}
+          {result.headline?.dataQuality === "live" && <GoldDepartureCard deal={result.headline} />}
+          {!result.headline && almostDeals.length > 0 && (
             <div>
-              <Eyebrow>Candidatos promissores · cache, não validados como ouro</Eyebrow>
-              <div className="mt-2">{res.almostDeals.map((d: any, i: number) => <Deal key={i} d={d} />)}</div>
+              <div className="flex flex-wrap items-center gap-3"><Eyebrow>Candidatos promissores, ainda não validados</Eyebrow><DataQualityBadge quality="cache" /></div>
+              <div className="mt-5 grid gap-4 lg:grid-cols-2">{almostDeals.map((deal, index) => <LuckyRevealCard key={`${deal.origin}-${deal.destination}-${index}`} deal={deal} />)}</div>
             </div>
           )}
-          {res.dataQuality && (
-            <p className="text-xs text-ink-faint">
-              qualidade do dado: {res.dataQuality}
-              {res.checkedAt ? ` · checado ${new Date(res.checkedAt).toLocaleString("pt-BR")}` : ""}
-            </p>
+          {!result.headline && almostDeals.length === 0 && (
+            <div className="glass p-6">
+              <h2 className="text-xl font-medium">Nenhuma oportunidade disponível agora.</h2>
+              <p className="mt-3 text-sm text-ink-faint">
+                Configure uma fonte de descoberta para gerar candidatos. Nenhum dado de demonstração foi apresentado como resultado.
+              </p>
+            </div>
           )}
-        </div>
+          <ProofPanel sources={result.sources} checkedAt={result.checkedAt} />
+        </section>
       )}
     </div>
   );
