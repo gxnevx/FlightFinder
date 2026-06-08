@@ -3,6 +3,7 @@ import { buildConsensus, type SourceResult } from "@/lib/consensus";
 import { alternatives, countryOf, getAirport, resolve } from "@/lib/sources/airports";
 import { getRate, toBrl } from "@/lib/sources/currency";
 import { getFlightSources } from "@/lib/sources/flights";
+import { googleFlightsUrl } from "@/lib/sources/googleflights";
 import { computeSources } from "@/lib/sources/status";
 import { checkVisa } from "@/lib/sources/visa";
 import { weatherSummary } from "@/lib/sources/weather";
@@ -84,5 +85,6 @@ export async function runSearch(req: SearchRequest): Promise<SearchResponse> {
     sources: computeSources(),
     warnings: rate.warnings,
     demo: priced.some((o) => o.demo) || results.some((r) => r.demo),
+    bookingUrl: googleFlightsUrl(effReq),
   };
 }

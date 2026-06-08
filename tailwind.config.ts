@@ -1,29 +1,19 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
-  content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}",
-  ],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      colors: {
-        cockpit: {
-          bg: "#0a0e16",
-          panel: "#121826",
-          edge: "#1f2937",
-          accent: "#38bdf8",
-          gold: "#fbbf24",
-          good: "#34d399",
-          warn: "#f59e0b",
-          bad: "#f87171",
-        },
-      },
       fontFamily: {
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        sans: ['ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
       },
+      colors: {
+        paper: "#f4f3ef",
+        ink: { DEFAULT: "#17160f", soft: "#5c5a51", faint: "#9b988d" },
+        line: "#e5e2d9",
+        signal: { good: "#3f6f52", warn: "#9a6b1e", bad: "#9a3b34" },
+      },
+      letterSpacing: { tightest: "-0.04em" },
     },
   },
   plugins: [],

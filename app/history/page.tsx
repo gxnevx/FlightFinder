@@ -1,8 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Badge, Glass, SectionTitle, fmtBrl } from "@/components/ui";
+import { Eyebrow, fmtBrl } from "@/components/ui";
 
 const TABS = [
   { k: "searches", l: "Buscas" },
@@ -19,60 +18,45 @@ export default function HistoryPage() {
     fetch(url).then((r) => r.json()).then(setData).catch(() => setData({}));
   }, [tab]);
 
-  const empty =
-    (tab === "searches" && !(data.searches || []).length) ||
-    (tab === "lucky" && !(data.deals || []).length) ||
-    (tab === "evals" && !(data.evals || []).length);
+  const rows = tab === "searches" ? data.searches || [] : tab === "lucky" ? data.deals || [] : data.evals || [];
 
   return (
-    <div className="space-y-6">
-      <SectionTitle kicker="persistência" title="Histórico" />
-      <div className="glass inline-flex gap-1 rounded-full p-1">
+    <div className="space-y-10 pt-16">
+      <div>
+        <Eyebrow>Persistência</Eyebrow>
+        <h1 className="mt-4 text-4xl font-semibold tracking-tightest text-ink sm:text-5xl">Histórico</h1>
+      </div>
+      <div className="flex gap-6 text-sm">
         {TABS.map((t) => (
-          <button key={t.k} onClick={() => setTab(t.k)} className="relative rounded-full px-4 py-1.5 text-sm">
-            {tab === t.k && <motion.span layoutId="histpill" className="absolute inset-0 rounded-full bg-white/10 glow-accent" />}
-            <span className={`relative ${tab === t.k ? "text-white" : "text-white/55"}`}>{t.l}</span>
+          <button
+            key={t.k}
+            onClick={() => setTab(t.k)}
+            className={tab === t.k ? "text-ink underline decoration-ink/30 underline-offset-4" : "text-ink-faint hover:text-ink"}
+          >
+            {t.l}
           </button>
         ))}
       </div>
-      <div className="space-y-3">
-        {tab === "searches" &&
-          (data.searches || []).map((s: any) => (
-            <Glass key={s.id}>
-              <div className="flex justify-between">
-                <div className="text-white">{s.origin} → {s.destination}</div>
-                <Badge tone="muted">{s.mode}</Badge>
-              </div>
-              <div className="text-xs text-white/45">
-                {s.departure_date}{s.return_date ? ` · volta ${s.return_date}` : ""} · {new Date(s.created_at).toLocaleString("pt-BR")}
-              </div>
-            </Glass>
-          ))}
-        {tab === "lucky" &&
-          (data.deals || []).map((d: any) => (
-            <Glass key={d.id}>
-              <div className="flex justify-between gap-3">
-                <div className="text-white">{d.headline}</div>
-                <Badge tone="gold">score {d.deal_score}</Badge>
-              </div>
-              <div className="text-xs text-white/45">{d.start_date} a {d.end_date} · {fmtBrl(d.total_price_brl)}</div>
-            </Glass>
-          ))}
-        {tab === "evals" &&
-          (data.evals || []).map((e: any, i: number) => (
-            <Glass key={i}>
-              <div className="flex justify-between">
-                <div className="text-white">{e.eval_name}</div>
-                <Badge tone={e.status === "ok" ? "good" : "bad"}>{e.status}</Badge>
-              </div>
-              <div className="text-xs text-white/45">{e.duration_ms} ms · {new Date(e.created_at).toLocaleString("pt-BR")}</div>
-            </Glass>
-          ))}
-        {empty && (
-          <p className="text-sm text-white/45">
-            nada ainda (ou Supabase não configurado: o histórico em memória zera entre deploys).
-          </p>
-        )}
+      <div className="divide-y divide-line">
+        {tab === "searches" && rows.map((s: any) => (
+          <div key={s.id} className="flex items-center justify-between gap-4 py-4">
+            <div className="text-ink">{s.origin} → {s.destination}</div>
+            <div className="text-sm text-ink-faint">{s.departure_date}{s.return_date ? ` · ${s.return_date}` : ""}</div>
+          </div>
+        ))}
+        {tab === "lucky" && rows.map((d: any) => (
+          <div key={d.id} className="flex items-center justify-between gap-4 py-4">
+            <div className="text-ink">{d.headline}</div>
+            <div className="text-sm text-ink-faint">{fmtBrl(d.total_price_brl)} · score {d.deal_score}</div>
+          </div>
+        ))}
+        {tab === "evals" && rows.map((e: any, i: number) => (
+          <div key={i} className="flex items-center justify-between gap-4 py-4">
+            <div className="text-ink">{e.eval_name}</div>
+            <div className="text-sm text-ink-faint">{e.status} · {e.duration_ms} ms</div>
+          </div>
+        ))}
+        {rows.length === 0 && <div className="py-4 text-sm text-ink-faint">nada ainda (sem Supabase, o histórico em memória zera entre deploys).</div>}
       </div>
     </div>
   );

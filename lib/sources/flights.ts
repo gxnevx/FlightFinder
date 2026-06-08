@@ -6,6 +6,7 @@
 import type { SourceResult } from "@/lib/consensus";
 import type { Offer, SearchRequest } from "@/lib/types";
 import { fetchJson } from "@/lib/http";
+import { searchGoogleFlights } from "@/lib/sources/googleflights";
 
 export function workerConfigured(): boolean {
   return Boolean((process.env.FLIGHT_WORKER_URL || "").trim());
@@ -91,7 +92,17 @@ async function travelpayouts(req: SearchRequest): Promise<SourceResult> {
 export async function getFlightSources(req: SearchRequest): Promise<SourceResult[]> {
   const out: SourceResult[] = [];
   const worker = await workerSources(req);
-  out.push(...(worker ?? mockOffers(req)));
+  if (worker) {
+    out.push(...worker);
+  } else {
+    // Google Flights via HTTP (sem chave, roda no Vercel) é a fonte real primária.
+    const gf = await searchGoogleFlights(req);
+    out.push(gf);
+    if (!gf.offers.length) {
+      // bloqueio/consent: mostra mock marcado como demo para a UI não ficar vazia.
+      out.push(...mockOffers(req).filter((m) => m.name !== "google-flights"));
+    }
+  }
   if (travelpayoutsConfigured()) out.push(await travelpayouts(req));
   return out;
 }

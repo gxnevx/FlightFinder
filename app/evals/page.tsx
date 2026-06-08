@@ -1,63 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Glass, SectionTitle } from "@/components/ui";
+import { Dot, Eyebrow } from "@/components/ui";
 
 export default function EvalsPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const load = () =>
-    fetch("/api/history/evals")
-      .then((r) => r.json())
-      .then((d) => setRows(d.evals || []))
-      .catch(() => {});
-
-  useEffect(() => {
-    load();
-  }, []);
+  const load = () => fetch("/api/history/evals").then((r) => r.json()).then((d) => setRows(d.evals || [])).catch(() => {});
+  useEffect(() => { load(); }, []);
 
   async function run() {
     setLoading(true);
-    try {
-      await fetch("/api/evals/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
-    } catch {
-      /* ignore */
-    }
+    try { await fetch("/api/evals/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }); } catch {}
     await load();
     setLoading(false);
   }
 
   return (
-    <div className="space-y-6">
-      <SectionTitle kicker="debug" title="Evals (testes reproduzíveis)" />
-      <button onClick={run} disabled={loading} className="rounded-2xl bg-cockpit-accent/90 px-5 py-2.5 font-semibold text-[#04121c] transition hover:bg-cockpit-accent disabled:opacity-50">
-        {loading ? "rodando…" : "Rodar evals"}
-      </button>
-      <div className="space-y-3">
+    <div className="space-y-12 pt-16">
+      <div className="flex items-end justify-between gap-6">
+        <div>
+          <Eyebrow>Debug</Eyebrow>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tightest text-ink sm:text-5xl">Evals</h1>
+        </div>
+        <button onClick={run} disabled={loading} className="btn">{loading ? "Rodando…" : "Rodar evals"}</button>
+      </div>
+      <div className="divide-y divide-line">
         {rows.map((e, i) => (
-          <Glass key={i}>
-            <div className="flex items-center justify-between">
-              <div className="font-medium text-white">{e.eval_name}</div>
-              <div className="flex gap-2">
-                <Badge tone={e.status === "ok" ? "good" : "bad"}>{e.status}</Badge>
-                <Badge tone="muted">{e.duration_ms} ms</Badge>
+          <div key={i} className="py-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-ink">{e.eval_name}</div>
+              <div className="flex items-center gap-5">
+                <span className="text-xs text-ink-faint">{e.duration_ms} ms</span>
+                <Dot tone={e.status === "ok" ? "good" : "bad"}>{e.status}</Dot>
               </div>
             </div>
-            <div className="mt-2 text-xs text-white/50">
-              fontes: {(e.sources_called || []).join(", ") || "-"}
-              {e.errors?.length ? ` · erros: ${e.errors.join("; ")}` : ""}
+            <div className="mt-1.5 text-sm text-ink-faint">
+              fontes {(e.sources_called || []).join(", ") || "—"}
+              {e.consolidated_result ? ` · sem pegadinha ${e.consolidated_result.bestClean != null ? "R$ " + Math.round(e.consolidated_result.bestClean) : "—"} · confiança ${e.consolidated_result.confidence}` : ""}
             </div>
-            {e.consolidated_result && (
-              <div className="mt-1 text-xs text-white/60">
-                melhor sem pegadinha: {e.consolidated_result.bestClean != null ? `R$ ${Math.round(e.consolidated_result.bestClean)}` : "-"} ·
-                confiança {e.consolidated_result.confidence} · {e.consolidated_result.divergent ? "divergente" : "convergente"}
-                {e.consolidated_result.demo ? " · demo" : ""}
-              </div>
-            )}
-          </Glass>
+          </div>
         ))}
-        {rows.length === 0 && <p className="text-sm text-white/45">nenhuma execução ainda. Clique em rodar evals.</p>}
+        {rows.length === 0 && <div className="py-5 text-sm text-ink-faint">nenhuma execução ainda.</div>}
       </div>
     </div>
   );
