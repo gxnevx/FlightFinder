@@ -27,13 +27,15 @@ export async function POST(req: Request) {
       const r = await runSearch(d.req);
       sources = r.consensus.sourcesUsed;
       consolidated = {
-        bestClean: r.bestClean?.priceBrl ?? null,
+        bestNoTrick: r.bestNoTrick?.priceBrl ?? null,
         bestAggressive: r.bestAggressive?.priceBrl ?? null,
         confidence: r.consensus.confidence,
+        independentEngines: r.consensus.independentEngines,
         minBrl: r.consensus.minBrl,
         maxBrl: r.consensus.maxBrl,
         divergent: r.consensus.divergent,
-        demo: r.demo,
+        dataQuality: r.dataQuality,
+        honestMessage: r.honestMessage ?? null,
       };
     } catch (e: any) {
       status = "erro";

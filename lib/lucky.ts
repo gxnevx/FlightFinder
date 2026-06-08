@@ -1,127 +1,102 @@
-// Modo "estou com sorte": destino aberto a partir de São Paulo + deal score.
-// Sem worker/Travelpayouts, usa um catálogo com preços típicos e gera achados
-// pseudo-aleatórios estáveis por dia, SEMPRE marcados como demo (não inventa
-// promoção real). Com token/worker, a camada pode ser trocada por dados reais.
+// Modo "estou com sorte" HONESTO.
+// - Sem fonte de descoberta real: NÃO inventa pérola (antes era PRNG sobre catálogo).
+// - Com Travelpayouts (cache): entrega "candidatos promissores", nunca "ouro".
+// - "Ouro" exige validação live (worker/Duffel), feita numa fase seguinte.
+import { fetchJson } from "@/lib/http";
 import { getRate, toBrl } from "@/lib/sources/currency";
-import type { Confidence, LuckyDeal } from "@/lib/types";
-
-interface Dest {
-  iata: string;
-  name: string;
-  country: string;
-  typicalUsd: number;
-  intercont: boolean;
-}
-
-const CATALOG: Dest[] = [
-  { iata: "EZE", name: "Buenos Aires", country: "Argentina", typicalUsd: 360, intercont: false },
-  { iata: "SCL", name: "Santiago", country: "Chile", typicalUsd: 420, intercont: false },
-  { iata: "MVD", name: "Montevidéu", country: "Uruguay", typicalUsd: 400, intercont: false },
-  { iata: "LIM", name: "Lima", country: "Peru", typicalUsd: 520, intercont: false },
-  { iata: "BOG", name: "Bogotá", country: "Colombia", typicalUsd: 560, intercont: false },
-  { iata: "MIA", name: "Miami", country: "United States", typicalUsd: 720, intercont: true },
-  { iata: "JFK", name: "Nova York", country: "United States", typicalUsd: 780, intercont: true },
-  { iata: "CUN", name: "Cancún", country: "Mexico", typicalUsd: 760, intercont: true },
-  { iata: "LIS", name: "Lisboa", country: "Portugal", typicalUsd: 1080, intercont: true },
-  { iata: "MAD", name: "Madri", country: "Spain", typicalUsd: 1120, intercont: true },
-  { iata: "CDG", name: "Paris", country: "France", typicalUsd: 1180, intercont: true },
-  { iata: "FCO", name: "Roma", country: "Italy", typicalUsd: 1220, intercont: true },
-  { iata: "NRT", name: "Tóquio", country: "Japan", typicalUsd: 1650, intercont: true },
-  { iata: "DXB", name: "Dubai", country: "United Arab Emirates", typicalUsd: 1480, intercont: true },
-];
+import type { DataQuality, LuckyDeal } from "@/lib/types";
 
 export interface LuckyRequest {
   window?: 7 | 30 | 60 | 90;
-  type?: "any" | "beach" | "europe" | "asia" | "south-america" | "weekend" | "last-minute";
+  type?: string;
   budgetBrl?: number | null;
   aggressive?: boolean;
 }
 
 export interface LuckyResult {
-  headline: LuckyDeal | null;
+  headline: LuckyDeal | null; // só quando for ouro validado live
   runnersUp: LuckyDeal[];
-  honest: string | null; // mensagem quando não há pérola real
-  demo: boolean;
+  almostDeals: LuckyDeal[]; // candidatos promissores (cache), não validados
+  honestMessage: string | null;
+  dataQuality: DataQuality;
+  sources: string[];
+  checkedAt: string;
 }
 
-// hash estável por dia (mesmo achado durante o dia)
-function seeded(s: string): number {
-  let h = 2166136261;
-  for (const c of s) h = (h ^ c.charCodeAt(0)) * 16777619;
-  return Math.abs(h % 1000) / 1000;
-}
+const ORIGINS = ["GRU", "CGH", "VCP"];
 
-function dealScore(percentBelow: number, totalBrl: number, d: Dest): number {
-  let s = percentBelow * 1.05;
-  if (d.intercont && totalBrl < 2500) s += 25;
-  if (!d.intercont && totalBrl < 900) s += 15;
-  return Math.max(0, Math.min(100, Math.round(s)));
-}
-
-function filterByType(type: LuckyRequest["type"]): Dest[] {
-  switch (type) {
-    case "europe":
-      return CATALOG.filter((d) => ["Portugal", "Spain", "France", "Italy"].includes(d.country));
-    case "asia":
-      return CATALOG.filter((d) => ["Japan", "United Arab Emirates"].includes(d.country));
-    case "south-america":
-      return CATALOG.filter((d) => !d.intercont);
-    case "beach":
-      return CATALOG.filter((d) => ["CUN", "MIA", "LIS"].includes(d.iata));
-    default:
-      return CATALOG;
+async function tpAnywhere(origin: string): Promise<any[]> {
+  const tok = (process.env.TRAVELPAYOUTS_TOKEN || "").trim();
+  const url = `https://api.travelpayouts.com/v1/prices/cheap?origin=${origin}&currency=usd`;
+  const d = await fetchJson<any>(url, { headers: { "X-Access-Token": tok }, timeout: 9000 });
+  const out: any[] = [];
+  for (const [dest, opts] of Object.entries<any>(d?.data || {})) {
+    const first = Object.values<any>(opts)[0];
+    if (first) out.push({ origin, dest, ...first });
   }
+  return out;
 }
 
 export async function runLucky(req: LuckyRequest): Promise<LuckyResult> {
-  const rate = await getRate(["USD"]);
-  const today = new Date().toISOString().slice(0, 10);
-  const win = req.window || 60;
+  const now = new Date().toISOString();
+  const hasTP = Boolean((process.env.TRAVELPAYOUTS_TOKEN || "").trim());
+  const hasLive = Boolean((process.env.FLIGHT_WORKER_URL || "").trim() || (process.env.DUFFEL_ACCESS_TOKEN || "").trim());
 
-  const deals: LuckyDeal[] = filterByType(req.type).map((d) => {
-    const frac = 0.45 + seeded(d.iata + today) * 0.7; // 0.45..1.15 do típico
-    const foundUsd = Math.round(d.typicalUsd * frac);
-    const totalBrl = toBrl(foundUsd, "USD", rate) ?? foundUsd * 5.3;
-    const typicalBrl = toBrl(d.typicalUsd, "USD", rate) ?? d.typicalUsd * 5.3;
-    const percentBelow = Math.round((1 - foundUsd / d.typicalUsd) * 100);
-    const score = dealScore(percentBelow, totalBrl, d);
-    const startOffset = 10 + Math.floor(seeded(d.iata + "s") * (win - 12));
-    const start = new Date(Date.now() + startOffset * 86400000).toISOString().slice(0, 10);
-    const end = new Date(Date.now() + (startOffset + 6) * 86400000).toISOString().slice(0, 10);
+  if (!hasTP) {
     return {
-      headline: `${d.name} por R$ ${Math.round(totalBrl).toLocaleString("pt-BR")} ida e volta`,
-      origin: "GRU",
-      destination: d.iata,
-      destinationName: d.name,
-      startDate: start,
-      endDate: end,
-      totalPriceBrl: Math.round(totalBrl),
-      typicalPriceBrl: Math.round(typicalBrl),
-      percentBelowTypical: percentBelow,
-      dealScore: score,
-      urgency: percentBelow >= 40 ? "alta: tarifas assim costumam durar 1 a 3 dias" : "moderada",
-      confidence: "baixa" as Confidence,
-      sourcesUsed: ["catálogo demo"],
-      caveats: [
-        "valores de demonstração (configure FLIGHT_WORKER_URL ou TRAVELPAYOUTS_TOKEN para dados reais)",
-        ...(d.intercont ? ["destino internacional: confira visto para passaporte BR"] : []),
-      ],
-      demo: true,
+      headline: null, runnersUp: [], almostDeals: [],
+      honestMessage:
+        "Nenhuma fonte de descoberta configurada (TRAVELPAYOUTS_TOKEN). Não invento pérolas. " +
+        "Configure Travelpayouts para candidatos promissores, e FLIGHT_WORKER_URL ou DUFFEL_ACCESS_TOKEN para validar como ouro real.",
+      dataQuality: "unavailable", sources: [], checkedAt: now,
     };
-  });
+  }
+
+  const rate = await getRate(["USD"]);
+  let raw: any[] = [];
+  try {
+    const lists = await Promise.all(ORIGINS.map((o) => tpAnywhere(o).catch(() => [])));
+    raw = lists.flat();
+  } catch {
+    /* segue vazio */
+  }
+  if (!raw.length) {
+    return {
+      headline: null, runnersUp: [], almostDeals: [],
+      honestMessage: "Travelpayouts não retornou candidatos agora (cache vazio para esses origens).",
+      dataQuality: "cache", sources: ["Travelpayouts (cache)"], checkedAt: now,
+    };
+  }
 
   const budget = req.budgetBrl ?? Infinity;
-  const eligible = deals.filter((d) => d.totalPriceBrl <= budget).sort((a, b) => b.dealScore - a.dealScore);
-  const isPerola = (d: LuckyDeal) => (d.percentBelowTypical ?? 0) >= 40 || (d.totalPriceBrl < 1500);
+  const deals: LuckyDeal[] = raw
+    .map((r) => {
+      const brl = toBrl(r.price, "USD", rate) ?? r.price * 5.3;
+      return {
+        headline: `${r.origin} para ${r.dest}`,
+        origin: r.origin, destination: r.dest, destinationName: r.dest,
+        startDate: String(r.departure_at || "").slice(0, 10),
+        endDate: String(r.return_at || "").slice(0, 10),
+        totalPriceBrl: Math.round(brl),
+        typicalPriceBrl: null, percentBelowTypical: null,
+        dealScore: Math.min(50, Math.max(5, Math.round(50 - brl / 400))), // cache sem baseline: score limitado
+        urgency: "cache, não validado",
+        confidence: "baixa" as const,
+        dataQuality: "cache" as const,
+        sourcesUsed: ["Travelpayouts (cache)"],
+        caveats: ["preço de cache (2-7 dias), não validado live; pode já ter mudado", "sem baseline histórico, o deal score é limitado"],
+      };
+    })
+    .filter((d) => d.totalPriceBrl <= budget)
+    .sort((a, b) => b.dealScore - a.dealScore || a.totalPriceBrl - b.totalPriceBrl);
 
-  const top = eligible[0] || null;
-  if (top && isPerola(top)) {
-    return { headline: top, runnersUp: eligible.slice(1, 4), honest: null, demo: true };
-  }
   return {
-    headline: null,
-    runnersUp: eligible.slice(0, 3),
-    honest: "Hoje não achei nada absurdo. Estes são os melhores quase achados (sem inflar nada).",
-    demo: true,
+    headline: null, // NUNCA ouro sem validação live
+    runnersUp: [],
+    almostDeals: deals.slice(0, 6),
+    honestMessage: hasLive
+      ? "Candidatos de cache (Travelpayouts). Valide os melhores com a fonte live antes de chamar de ouro."
+      : "Candidatos promissores de cache (Travelpayouts), ainda NÃO validados como ouro real. Configure FLIGHT_WORKER_URL ou DUFFEL_ACCESS_TOKEN para validar.",
+    dataQuality: "cache", sources: ["Travelpayouts (cache)"], checkedAt: now,
   };
 }

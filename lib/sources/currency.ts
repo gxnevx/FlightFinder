@@ -9,6 +9,8 @@ export interface RateData {
   base: Record<string, number>; // MOEDA -> R$ por unidade (sem IOF)
   ptaxUsd: number | null;
   iofPct: number;
+  iofApplied: boolean;
+  iofLabel: string;
   source: string;
   trendNote?: string;
   warnings: string[];
@@ -37,10 +39,15 @@ export function toBrl(amount: number | null, currency: string, rate: RateData): 
 
 export async function getRate(currencies: string[]): Promise<RateData> {
   const set = new Set<string>(["USD", ...currencies.map((c) => (c || "USD").toUpperCase())]);
+  const pct = iofPct();
   const rate: RateData = {
     base: {},
     ptaxUsd: null,
-    iofPct: iofPct(),
+    iofPct: pct,
+    iofApplied: pct > 0,
+    iofLabel: pct > 0
+      ? `custo estimado com IOF de ${pct}% sobre compra internacional (premissa; ajuste via IOF_PCT, 0 desliga)`
+      : "sem IOF (IOF_PCT=0)",
     source: "indisponível",
     warnings: [],
     checkedAt: new Date().toISOString(),

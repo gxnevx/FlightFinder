@@ -93,8 +93,20 @@ export default function LuckyPage() {
       {res?.error && <p className="text-signal-bad">{res.error}</p>}
       {res && !loading && (
         <div className="rise space-y-8">
-          {res.headline ? <Deal d={res.headline} hero /> : res.honest && <p className="text-ink-soft">{res.honest}</p>}
-          {(res.runnersUp || []).length > 0 && <div>{res.runnersUp.map((d: any, i: number) => <Deal key={i} d={d} />)}</div>}
+          {res.headline && <Deal d={res.headline} hero />}
+          {res.honestMessage && <p className="max-w-2xl text-signal-warn">{res.honestMessage}</p>}
+          {(res.almostDeals || []).length > 0 && (
+            <div>
+              <Eyebrow>Candidatos promissores · cache, não validados como ouro</Eyebrow>
+              <div className="mt-2">{res.almostDeals.map((d: any, i: number) => <Deal key={i} d={d} />)}</div>
+            </div>
+          )}
+          {res.dataQuality && (
+            <p className="text-xs text-ink-faint">
+              qualidade do dado: {res.dataQuality}
+              {res.checkedAt ? ` · checado ${new Date(res.checkedAt).toLocaleString("pt-BR")}` : ""}
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -34,14 +34,15 @@ export async function saveSearch(req: SearchRequest, resp: SearchResponse, mode 
     passengers: req.passengers || 1,
     baggage: req.baggage || "carry_on",
     accepts_alternative_airports: !!req.acceptsAlternativeAirports,
-    accepts_split_ticket: !!req.acceptsSplitTicket,
-    accepts_multimodal: !!req.acceptsMultimodal,
-    accepts_aggressive_routes: !!req.acceptsAggressiveRoutes,
+    accepts_split_ticket: false,
+    accepts_multimodal: false,
+    accepts_aggressive_routes: false,
     raw_request: req,
   };
   const picks = [
-    { rank: 1, title: "Melhor sem pegadinha", offer: resp.bestClean },
-    { rank: 2, title: "Melhor agressiva", offer: resp.bestAggressive },
+    { rank: 1, title: "Melhor sem pegadinha", offer: resp.bestNoTrick },
+    { rank: 2, title: "Mais agressiva", offer: resp.bestAggressive },
+    { rank: 3, title: "Mais barato (bruto)", offer: resp.cheapestRaw },
   ].filter((p) => p.offer);
   const rows: Row[] = picks.map((p) => ({
     id: uuid(),
@@ -66,10 +67,17 @@ export async function saveSearch(req: SearchRequest, resp: SearchResponse, mode 
     try {
       await sb.from("searches").insert(search);
       if (rows.length) await sb.from("search_results").insert(rows);
+      const failed = new Set((resp.consensus?.sourcesFailed || []).map((f) => f.split(" (")[0]));
       await sb.from("source_logs").insert(
-        resp.sources.map((s) => ({ id: uuid(), created_at, source_name: s.key, endpoint_or_adapter: s.label, status: s.state, duration_ms: null, error_message: null, metadata: { note: s.note } }))
+        resp.sources.map((s) => ({
+          id: uuid(), created_at, source_name: s.key, endpoint_or_adapter: s.label,
+          status: s.state, duration_ms: null,
+          error_message: failed.has(s.label) || s.state === "erro" ? s.note : null,
+          metadata: { role: s.role, data_quality: s.dataQuality, note: s.note },
+        }))
       );
-    } catch {
+    } catch (e: any) {
+      console.warn(`[persistence] saveSearch (supabase) falhou: ${String(e?.message || e).slice(0, 200)}`);
       mem.searches.unshift(search);
       mem.results.unshift(...rows);
     }
@@ -102,10 +110,11 @@ export async function saveLuckyDeal(deal: LuckyDeal): Promise<void> {
   const sb = createAdminClient();
   if (sb) {
     try {
-      await sb.from("lucky_deals").insert(row);
+      const { error } = await sb.from("lucky_deals").insert(row);
+      if (error) throw error;
       return;
-    } catch {
-      /* cai para memória */
+    } catch (e: any) {
+      console.warn(`[persistence] insert lucky_deals falhou: ${String(e?.message || e).slice(0, 200)}`);
     }
   }
   mem.lucky.unshift(row);
@@ -116,31 +125,35 @@ export async function saveEvalRun(row: Row): Promise<void> {
   const sb = createAdminClient();
   if (sb) {
     try {
-      await sb.from("eval_runs").insert(r);
+      const { error } = await sb.from("eval_runs").insert(r);
+      if (error) throw error;
       return;
-    } catch {
-      /* memória */
+    } catch (e: any) {
+      console.warn(`[persistence] insert eval_runs falhou: ${String(e?.message || e).slice(0, 200)}`);
     }
   }
   mem.evals.unshift(r);
 }
 
-async function list(table: keyof typeof mem, limit: number): Promise<Row[]> {
+// memKey (memória) e table (Supabase) são distintos: a tabela de pérolas é
+// lucky_deals (não "lucky") e a de evals é eval_runs (não "evals").
+async function listRows(memKey: keyof typeof mem, table: string, limit: number): Promise<Row[]> {
   const sb = createAdminClient();
   if (sb) {
     try {
-      const { data } = await sb.from(table as string).select("*").order("created_at", { ascending: false }).limit(limit);
+      const { data, error } = await sb.from(table).select("*").order("created_at", { ascending: false }).limit(limit);
+      if (error) throw error;
       return data || [];
-    } catch {
-      /* memória */
+    } catch (e: any) {
+      console.warn(`[persistence] list ${table} (supabase) falhou: ${String(e?.message || e).slice(0, 200)}`);
     }
   }
-  return (mem[table] as Row[]).slice(0, limit);
+  return (mem[memKey] as Row[]).slice(0, limit);
 }
 
-export const listSearches = (limit = 20) => list("searches", limit);
-export const listLuckyDeals = (limit = 20) => list("lucky", limit);
-export const listEvals = (limit = 20) => list("evals", limit);
+export const listSearches = (limit = 20) => listRows("searches", "searches", limit);
+export const listLuckyDeals = (limit = 20) => listRows("lucky", "lucky_deals", limit);
+export const listEvals = (limit = 20) => listRows("evals", "eval_runs", limit);
 
 export async function getPreferences(): Promise<Row | null> {
   const sb = createAdminClient();

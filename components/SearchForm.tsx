@@ -44,9 +44,6 @@ export default function SearchForm({ endpoint, advanced = false }: { endpoint: s
     flexibilityDays: 0,
     baggage: "carry_on",
     acceptsAlternativeAirports: true,
-    acceptsSplitTicket: false,
-    acceptsMultimodal: false,
-    acceptsAggressiveRoutes: true,
   });
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any>(null);
@@ -79,11 +76,16 @@ export default function SearchForm({ endpoint, advanced = false }: { endpoint: s
           <div><span className="label">Flexibilidade</span><Chips value={f.flexibilityDays} onChange={(v) => up("flexibilityDays", v)} options={[{ v: 0, l: "Exata" }, { v: 1, l: "±1" }, { v: 3, l: "±3" }, { v: 7, l: "±7" }]} /></div>
         </div>
         <div><span className="label">Bagagem</span><Chips value={f.baggage} onChange={(v) => up("baggage", v)} options={[{ v: "none", l: "Sem mala" }, { v: "carry_on", l: "De mão" }, { v: "checked", l: "Despachada" }]} /></div>
-        <div className="hair grid gap-5 pt-8 sm:grid-cols-2">
-          <Toggle checked={f.acceptsAlternativeAirports} onChange={(v) => up("acceptsAlternativeAirports", v)} label="Aeroportos alternativos" />
-          <Toggle checked={f.acceptsSplitTicket} onChange={(v) => up("acceptsSplitTicket", v)} label="Bilhetes separados" />
-          <Toggle checked={f.acceptsMultimodal} onChange={(v) => up("acceptsMultimodal", v)} label="Trem / ônibus / ferry" />
-          <Toggle checked={f.acceptsAggressiveRoutes} onChange={(v) => up("acceptsAggressiveRoutes", v)} label="Rotas agressivas" />
+        <div className="hair pt-8">
+          <Toggle
+            checked={f.acceptsAlternativeAirports}
+            onChange={(v) => up("acceptsAlternativeAirports", v)}
+            label="Considerar aeroportos próximos (preço real neles requer o worker)"
+          />
+          <p className="mt-3 text-xs text-ink-faint">
+            Split ticket, multimodal e rotas agressivas só aparecem quando implementados de verdade (roadmap),
+            nunca como botão que não faz nada.
+          </p>
         </div>
         <button onClick={go} disabled={loading} className="btn">{loading ? "Buscando…" : "Buscar voos"}</button>
       </div>

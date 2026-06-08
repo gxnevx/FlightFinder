@@ -22,13 +22,14 @@ export async function POST(req: Request) {
     } catch {
       /* best-effort */
     }
+    const hasWorker = Boolean((process.env.FLIGHT_WORKER_URL || "").trim());
     const strategies = [
-      { key: "flex-dates", label: "Datas flexíveis", available: (body.flexibilityDays || 0) > 0 },
-      { key: "alt-airports", label: "Aeroportos alternativos", available: body.acceptsAlternativeAirports !== false },
-      { key: "split-ticket", label: "Split ticket", available: false, note: "roadmap" },
-      { key: "hidden-city", label: "Hidden city (apenas alerta)", available: false, note: "roadmap, nunca recomendação automática" },
-      { key: "multimodal", label: "Multimodal trem/ônibus", available: false, note: "roadmap (fonte grátis pendente)" },
-      { key: "miles", label: "Dinheiro vs milhas", available: false, note: "roadmap, best-effort" },
+      { key: "flex-dates", label: "Datas flexíveis (matriz +/- dias)", available: hasWorker, note: hasWorker ? "via worker" : "requer FLIGHT_WORKER_URL" },
+      { key: "alt-airports", label: "Aeroportos alternativos (preço real)", available: hasWorker, note: hasWorker ? "via worker" : "requer FLIGHT_WORKER_URL" },
+      { key: "split-ticket", label: "Split ticket", available: false, note: "roadmap (worker)" },
+      { key: "positioning", label: "Voo de posicionamento", available: false, note: "roadmap (worker)" },
+      { key: "hidden-city", label: "Hidden city (só alerta, nunca top)", available: false, note: "roadmap" },
+      { key: "miles", label: "Dinheiro vs milhas (seats.aero)", available: false, note: "requer SEATS_AERO_API_KEY" },
     ];
     return NextResponse.json({ ...result, searchId, strategies });
   } catch (e: any) {
