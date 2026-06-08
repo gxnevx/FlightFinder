@@ -1,25 +1,3 @@
-import "./globals.css";
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
-import Backdrop from "@/components/Backdrop";
-import Nav from "@/components/Nav";
-
-export const metadata: Metadata = {
-  title: "FlightFinder",
-  description: "Busca de voos multi-fonte com consenso de preço, em reais.",
-};
-
-export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="pt-BR">
-      <body>
-        <Backdrop />
-        <Nav />
-        <main className="mx-auto w-full max-w-5xl px-6 pb-32">{children}</main>
-        <footer className="mx-auto max-w-5xl px-6 py-10 text-xs text-ink-faint">
-          FlightFinder · busca multi-fonte com consenso · valores em reais
-        </footer>
-      </body>
-    </html>
-  );
-}
+import "./globals.css"; import type {Metadata} from "next"; import type {ReactNode} from "react"; import Backdrop from "@/components/Backdrop"; import Nav from "@/components/Nav"; import {TerminalStatusBar,FlightTicker} from "@/components/terminal";
+export const metadata:Metadata={title:"FlightFinder — Route Intelligence",description:"Terminal inteligente para oportunidades de voo."};
+export default function RootLayout({children}:{children:ReactNode}){return <html lang="pt-BR"><body><Backdrop/><TerminalStatusBar/><Nav/><main className="mx-auto w-full max-w-[1440px] px-5 pb-28">{children}</main><FlightTicker/><footer className="mx-auto flex max-w-[1440px] justify-between px-5 py-8 font-mono text-[8px] font-bold uppercase tracking-[.15em] text-ink-faint"><span>FlightFinder / route intelligence</span><span>Light terminal system · 2026</span></footer></body></html>}

@@ -1,39 +1,4 @@
 "use client";
-
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-const LINKS = [
-  { href: "/search", label: "Buscar" },
-  { href: "/lucky", label: "Estou com sorte" },
-  { href: "/advanced", label: "Avançado" },
-  { href: "/evals", label: "Evals" },
-  { href: "/history", label: "Histórico" },
-];
-
-export default function Nav() {
-  const path = usePathname();
-  return (
-    <header className="sticky top-0 z-30 bg-paper/80 backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-        <Link href="/" className="text-[15px] font-semibold tracking-tightest text-ink">
-          FlightFinder
-        </Link>
-        <nav className="flex items-center gap-5 text-sm">
-          {LINKS.map((l) => {
-            const active = path.startsWith(l.href);
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={active ? "text-ink underline decoration-ink/30 underline-offset-4" : "text-ink-faint transition hover:text-ink"}
-              >
-                {l.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
-    </header>
-  );
-}
+import Link from "next/link"; import {usePathname} from "next/navigation";
+const links=[["/search","Command"],["/lucky","Lucky / Gold"],["/advanced","Strategy"],["/history","Flight log"],["/evals","Lab"]];
+export default function Nav(){const path=usePathname();return <header className="sticky top-0 z-30 border-b border-line bg-paper/75 backdrop-blur-xl"><div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-5 py-3"><Link href="/" className="flex items-center gap-3 text-sm font-black tracking-[-.06em] text-ink"><span className="grid h-8 w-8 place-items-center bg-ink text-[9px] tracking-normal text-accent-lime">FF</span> FLIGHTFINDER <em className="hidden font-mono text-[7px] not-italic tracking-[.16em] text-ink-faint sm:block">ROUTE INTELLIGENCE</em></Link><nav className="hidden items-center gap-1 lg:flex">{links.map(([href,label])=><Link key={href} href={href} className={`rounded-full px-3 py-2 font-mono text-[9px] font-bold uppercase tracking-[.13em] transition ${path.startsWith(href)?"bg-ink text-paper":"text-ink-faint hover:bg-white hover:text-ink"}`}>{label}</Link>)}</nav><Link href="/lucky" className="rounded-full bg-accent-lime px-4 py-2 font-mono text-[9px] font-black uppercase tracking-[.14em] text-ink">revelar pérola ↗</Link></div></header>}

@@ -72,9 +72,33 @@ Visual: `RouteCanvas`, `AgentProgressLoader`, `DepartureBoard`, `FlightRow`,
 - Loader intencional (>=1s), com etapas nomeadas e status de fonte.
 - Continua **light**. Sem dark mode. Sem skeleton genérico. Sem fundo parado.
 
-## 6. Estado atual vs alvo
+## 6. Estado implementado
 
-Implementado: base clara editorial + instrumentos SVG (gauge/meter/route-line),
-count-up, reveals, marquee, backdrop com mesh/grid. **Pendente** (este brief):
-RouteCanvas, AgentProgressLoader, DepartureBoard, BoardingPassCard, LuckyReveal,
-command-bar, strategy cockpit, galeria de histórico, split-flap, tokens novos.
+A base foi substituída pelo terminal claro experimental: RouteCanvas animado, AgentProgressLoader, DepartureBoard, BoardingPassCard, command interface, strategy cockpit, galeria de histórico, laboratório de evals, ticker/split-flap e tokens técnicos. O SVG/canvas leve preserva performance e deixa uma evolução futura para WebGL sem tornar a experiência dependente dele.
+
+## 7. Implementação entregue — registro de assets e vetores
+
+Os assets são originais e gerados em código para preservar nitidez, performance e consistência. Nenhum asset visual das referências foi copiado.
+
+| Asset / componente | Linguagem visual | Função / localização |
+|---|---|---|
+| `RouteCanvas` | mapa abstrato, curvas de rota, nós pulsantes e contornos | hero, `/lucky`, `/search`, `/advanced`; modos idle/searching/reveal |
+| `TerminalStatusBar` | telemetria de control room | barra global superior com hubs, fontes, latência e relógio |
+| `DepartureBoard` / `FlightRow` | FIDS premium claro | stream de oportunidades e rotas testadas |
+| `BoardingPassCard` | boarding pass editorial com stub e barcode | oportunidades, resultados e galeria de histórico |
+| `AgentProgressLoader` | progress ring + log operacional | caça lucky e laboratório de evals; substitui skeleton |
+| `GateStatusBadge` | chip técnico cromático | live/cache/demo/scanning/validating/candidate/rejected/gold |
+| `FlightTicker` | split-flap/marquee contemporâneo | ticker global de rotas e preços |
+| `StrategyCard` | taxonomy de laboratório | cockpit de estratégias e doutrina do agente |
+| `MetricPanel` | instrumento operacional | fontes, scores, timings e telemetria |
+| grid/noise/contours | textura laboratorial clara | backdrop global e canvas, sem prejudicar legibilidade |
+
+## 8. Validação contra o brief
+
+- O tema permanece exclusivamente claro, usando ivory, superfícies glass e graphite.
+- A home é uma experiência de entrada full-bleed com hero assimétrico, command bar, mapa e boarding pass flutuante.
+- `/lucky` possui caça própria, route graph, candidate stream, progress operacional e reveal honesto por qualidade.
+- `/search` começa por linguagem natural e explicita a interpretação antes dos parâmetros técnicos.
+- `/advanced` apresenta estratégias como cockpit, com estados visíveis e grafo de rotas.
+- `/history` é uma galeria de descobertas; `/evals` é um laboratório de telemetria.
+- Resultados exibem boarding pass, qualidade, confiança, fontes, checkedAt e prova já disponível no payload.
