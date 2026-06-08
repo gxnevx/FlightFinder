@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "letsfg": {
+      "command": "npx",
+      "args": ["-y", "letsfg-mcp"]
+    }
+  }
+}

@@ -1,11 +1,16 @@
-# Dependencies / installs (provisioned per-session by the SessionStart hook)
+# Dependências / instalados pelo hook SessionStart (container efêmero)
 node_modules/
+__pycache__/
+*.pyc
 
-# agent-browser runtime state lives outside the repo (~/.agent-browser), but
-# guard against accidental local copies / browser downloads.
+# Build do conversor Rust (dolarhoje) e caches de dados (OpenFlights, vistos)
+tools/usd-brl/target/
+tools/flightfinder/data/
+
+# Estado de runtime do agent-browser (fora do repo, mas por garantia)
 .agent-browser/
 browsers/
 
-# Logs & OS cruft
+# Logs e lixo de SO
 *.log
 .DS_Store

@@ -1,0 +1,12 @@
+[package]
+name = "usd-brl"
+version = "0.1.0"
+edition = "2021"
+description = "Real-time USD->BRL using the dolarhoje crate (jaswdr/dolarhoje)"
+
+[[bin]]
+name = "usd-brl"
+path = "src/main.rs"
+
+[dependencies]
+dolarhoje = "1.0.4"

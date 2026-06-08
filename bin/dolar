@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Real-time USD -> BRL via the dolarhoje crate (tools/usd-brl).
+#
+#   ./bin/dolar            -> current USD->BRL rate (e.g. 5.1600)
+#   ./bin/dolar 57 349     -> "USD 57.00 = BRL ..." for each amount
+#
+# Builds the Rust binary on first use if the SessionStart hook's background
+# pre-build hasn't finished yet (subsequent calls are instant).
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BIN="$ROOT/tools/usd-brl/target/release/usd-brl"
+if [ ! -x "$BIN" ]; then
+  echo "bin/dolar: building the USD->BRL converter (one-time, ~45s)..." >&2
+  cargo build --release --quiet --manifest-path "$ROOT/tools/usd-brl/Cargo.toml" >&2
+fi
+exec "$BIN" "$@"

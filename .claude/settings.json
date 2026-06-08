@@ -3,11 +3,23 @@
   "env": {
     "AGENT_BROWSER_EXECUTABLE_PATH": "/root/.agent-browser/chrome",
     "AGENT_BROWSER_IGNORE_HTTPS_ERRORS": "true",
-    "AGENT_BROWSER_ARGS": "--no-sandbox"
+    "AGENT_BROWSER_ARGS": "--no-sandbox",
+
+    "SSL_CERT_FILE": "/etc/ssl/certs/ca-certificates.crt",
+    "REQUESTS_CA_BUNDLE": "/etc/ssl/certs/ca-certificates.crt",
+
+    "IOF_PCT": "3.5",
+
+    "AWESOMEAPI_TOKEN": "",
+    "TRAVELPAYOUTS_TOKEN": "",
+    "AVIATIONSTACK_TOKEN": ""
   },
   "permissions": {
     "allow": [
-      "Bash(agent-browser:*)"
+      "Bash(agent-browser:*)",
+      "Bash(letsfg:*)",
+      "Bash(./bin/flightfinder:*)",
+      "Bash(./bin/dolar:*)"
     ]
   },
   "hooks": {
@@ -16,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/setup-agent-browser.sh\""
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/setup-flightfinder.sh\""
           }
         ]
       }

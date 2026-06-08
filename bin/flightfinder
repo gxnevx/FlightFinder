@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# FlightFinder: busca de voos multi-fonte (modo consenso, PT-BR / BRL).
+#
+#   ./bin/flightfinder GRU LIS 2026-09-10 --return 2026-09-24 [--gf-usd 1159] [--json]
+#
+# Replica o tratamento de TLS do Node para o Python: aponta o CA do sistema
+# (que inclui o CA do proxy do sandbox), senão as chamadas HTTPS falham.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+export SSL_CERT_FILE="${SSL_CERT_FILE:-/etc/ssl/certs/ca-certificates.crt}"
+export REQUESTS_CA_BUNDLE="${REQUESTS_CA_BUNDLE:-$SSL_CERT_FILE}"
+export PYTHONPATH="$ROOT/tools/flightfinder${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m flightfinder "$@"
