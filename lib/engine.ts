@@ -39,6 +39,10 @@ export async function runSearch(req: SearchRequest): Promise<SearchResponse> {
   const clean = priced.filter((o) => o.stops != null && o.stops <= 1 && !/combo|interlining|autocone/i.test(o.airline));
   const bestClean = cheapest(clean.length ? clean : priced);
   const bestAggressive = cheapest(priced);
+  const topOffers = [...priced]
+    .sort((a, b) => (a.priceBrl as number) - (b.priceBrl as number))
+    .filter((o, i, arr) => arr.findIndex((x) => x.priceBrl === o.priceBrl && x.airline === o.airline) === i)
+    .slice(0, 6);
   const savingsPct =
     bestClean && bestAggressive && bestClean.priceBrl && bestClean.priceBrl > 0 && bestAggressive !== bestClean
       ? (bestClean.priceBrl - (bestAggressive.priceBrl as number)) / bestClean.priceBrl
@@ -86,5 +90,6 @@ export async function runSearch(req: SearchRequest): Promise<SearchResponse> {
     warnings: rate.warnings,
     demo: priced.some((o) => o.demo) || results.some((r) => r.demo),
     bookingUrl: googleFlightsUrl(effReq),
+    topOffers,
   };
 }

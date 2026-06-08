@@ -1,31 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import { Eyebrow, Tag, Toggle, fmtBrl } from "@/components/ui";
+import { Gauge } from "@/components/instruments";
+import { CountUp, Reveal } from "@/components/motion";
+import { Eyebrow, Toggle, fmtBrl } from "@/components/ui";
+
+const brl = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
 
 function Deal({ d, hero }: { d: any; hero?: boolean }) {
-  return (
-    <div className={hero ? "" : "hair pt-8"}>
-      <div className="flex items-baseline justify-between gap-6">
+  if (hero) {
+    return (
+      <Reveal className="grid items-center gap-10 sm:grid-cols-[1fr_auto]">
         <div>
-          <div className={`font-semibold tracking-tightest text-ink ${hero ? "text-4xl sm:text-5xl" : "text-2xl"}`}>{d.destinationName}</div>
-          <div className="mt-1.5 text-sm text-ink-faint">{d.origin} → {d.destination} · {d.startDate} a {d.endDate}</div>
+          <Eyebrow>pqp, olha isso</Eyebrow>
+          <div className="mt-3 text-5xl font-semibold tracking-tightest text-ink sm:text-6xl">{d.destinationName}</div>
+          <div className="mt-2 text-sm text-ink-faint">{d.origin} → {d.destination} · {d.startDate} a {d.endDate}</div>
+          <div className="mt-6 text-4xl font-semibold tracking-tightest text-ink"><CountUp value={d.totalPriceBrl} format={brl} /></div>
+          {d.percentBelowTypical != null && <div className="mt-1.5 text-sm text-signal-good">{d.percentBelowTypical}% abaixo do típico · {d.urgency}</div>}
+          {d.caveats?.length > 0 && (
+            <ul className="mt-5 space-y-1 text-sm text-ink-faint">
+              {d.caveats.map((c: string, i: number) => <li key={i}>{c}</li>)}
+            </ul>
+          )}
         </div>
-        <div className="shrink-0 text-right">
-          <div className={`font-semibold text-ink ${hero ? "text-3xl" : "text-xl"}`}>{fmtBrl(d.totalPriceBrl)}</div>
-          {d.percentBelowTypical != null && <div className="text-sm text-signal-good">{d.percentBelowTypical}% abaixo do típico</div>}
-        </div>
+        <Gauge value={d.dealScore} label="deal score" tone={d.dealScore >= 70 ? "good" : d.dealScore >= 45 ? "warn" : "bad"} />
+      </Reveal>
+    );
+  }
+  return (
+    <div className="hair flex items-center justify-between gap-6 py-5">
+      <div>
+        <div className="text-lg text-ink">{d.destinationName} <span className="text-ink-faint">({d.destination})</span></div>
+        <div className="text-sm text-ink-faint">{d.startDate} a {d.endDate}</div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Tag>deal score {d.dealScore}</Tag>
-        <Tag>{d.urgency}</Tag>
-        {d.demo && <Tag>demo</Tag>}
+      <div className="text-right">
+        <div className="font-semibold text-ink">{fmtBrl(d.totalPriceBrl)}</div>
+        <div className="text-sm text-ink-faint">score {d.dealScore}{d.percentBelowTypical != null ? ` · ${d.percentBelowTypical}% abaixo` : ""}</div>
       </div>
-      {hero && d.caveats?.length > 0 && (
-        <ul className="mt-4 space-y-1 text-sm text-ink-faint">
-          {d.caveats.map((c: string, i: number) => <li key={i}>{c}</li>)}
-        </ul>
-      )}
     </div>
   );
 }

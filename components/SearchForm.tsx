@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import ResultView from "@/components/ResultView";
+import { CountUp } from "@/components/motion";
 import { Eyebrow, Toggle } from "@/components/ui";
 
 const future = (d: number) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10);
@@ -88,9 +89,11 @@ export default function SearchForm({ endpoint, advanced = false }: { endpoint: s
       </div>
 
       {loading && (
-        <div className="space-y-3">
-          <div className="h-12 w-2/3 animate-pulse rounded bg-line" />
-          <div className="h-5 w-1/2 animate-pulse rounded bg-line" />
+        <div className="py-6">
+          <div className="text-6xl font-semibold tracking-tightest text-ink">
+            <CountUp value={96} duration={6000} />%
+          </div>
+          <div className="mt-2 text-sm text-ink-faint">Consultando fontes e reconciliando preços…</div>
         </div>
       )}
       {advanced && data?.strategies && (

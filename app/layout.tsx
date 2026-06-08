@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import Backdrop from "@/components/Backdrop";
 import Nav from "@/components/Nav";
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
       <body>
+        <Backdrop />
         <Nav />
         <main className="mx-auto w-full max-w-5xl px-6 pb-32">{children}</main>
         <footer className="mx-auto max-w-5xl px-6 py-10 text-xs text-ink-faint">

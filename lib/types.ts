@@ -91,6 +91,7 @@ export interface SearchResponse {
   warnings: string[];
   demo: boolean; // true se algum preço veio de mock
   bookingUrl?: string; // abre o Google Flights na rota/data p/ reservar
+  topOffers?: Offer[]; // tarifas mais baratas (para os cards de resultado)
 }
 
 export interface LuckyDeal {
