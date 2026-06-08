@@ -1,20 +1,4 @@
 "use client";
-
-import SearchForm from "@/components/SearchForm";
-import { Eyebrow } from "@/components/ui";
-
-export default function AdvancedPage() {
-  return (
-    <div className="space-y-12 pt-16">
-      <div>
-        <Eyebrow>Busca avançada</Eyebrow>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tightest text-ink sm:text-5xl">Estratégias e flexibilidade</h1>
-        <p className="mt-5 max-w-xl text-ink-soft">
-          Datas flexíveis e aeroportos alternativos entram no consenso. Split ticket, hidden city, multimodal e milhas
-          são roadmap.
-        </p>
-      </div>
-      <SearchForm endpoint="/api/advanced-search" advanced />
-    </div>
-  );
-}
+import {useState} from "react"; import SearchForm from "@/components/SearchForm"; import {DepartureBoard,RouteCanvas,StrategyCard} from "@/components/terminal";
+const strategies=[["STR/01","Datas flexíveis","candidate","Varre janelas próximas e compara o custo típico."],["STR/02","Aeroportos alternativos","live","Expande São Paulo para GRU, CGH e VCP."],["STR/03","Split ticket","demo","Estratégia experimental; exige validação adicional."],["STR/04","Multimodal","checking","Conecta trechos terrestres e aéreos."],["STR/05","Milhas","cache","Baseline de programas parceiros."],["STR/06","Destino aberto","validating","Gera candidatos sem destino pré-definido."]];
+export default function AdvancedPage(){const [open,setOpen]=useState(false);return <div className="space-y-16 page-shell"><header><div className="section-label">Strategy cockpit / agent controls</div><h1 className="mt-5 text-6xl font-semibold leading-[.92] sm:text-8xl">configure a caça,<br/><span className="text-accent-blue">não o formulário.</span></h1></header><div className="cards-grid">{strategies.map(s=><StrategyCard key={s[0]} code={s[0]} title={s[1]} status={s[2]} text={s[3]}/>)}</div><div className="asym-grid"><RouteCanvas mode="searching"/><DepartureBoard title="route test log"/></div><button onClick={()=>setOpen(!open)} className="btn">{open?"fechar parâmetros":"lançar busca estratégica ↗"}</button>{open&&<section className="terminal-panel p-5 sm:p-8"><SearchForm endpoint="/api/advanced-search" advanced/></section>}</div>}

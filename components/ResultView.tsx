@@ -3,6 +3,7 @@
 import { Gauge, Meter, RouteLine } from "@/components/instruments";
 import { CountUp, Reveal } from "@/components/motion";
 import { Eyebrow, Tag, fmtBrl } from "@/components/ui";
+import { BoardingPassCard, GateStatusBadge } from "@/components/terminal";
 
 const brl = (n: number) => `R$ ${Math.round(n).toLocaleString("pt-BR")}`;
 const stopsTxt = (n: number | null) => (n == null ? "" : n === 0 ? "direto" : `${n} parada${n > 1 ? "s" : ""}`);
@@ -64,14 +65,14 @@ export default function ResultView({ data }: { data: any }) {
   const onlyGoogle = (c.independentEngines || []).length <= 1 && (c.independentEngines || [])[0] === "google";
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-16"><BoardingPassCard from={q.resolvedOrigin || q.origin} to={q.resolvedDest || q.destination} destination={q.resolvedDest || q.destination} price={best.priceBrl} score={Math.round(confNum(c.confidence))} quality={best.dataQuality} />
       {data.honestMessage && <p className="text-sm text-signal-warn">{data.honestMessage}</p>}
 
-      <Reveal className="grid items-center gap-8 sm:grid-cols-[1.1fr_1fr]">
+      <Reveal className="terminal-panel grid items-center gap-8 p-5 sm:grid-cols-[1.1fr_1fr] sm:p-8">
         <div>
           <div className="flex items-center gap-2">
             <Eyebrow>{data.bestNoTrick ? "Melhor sem pegadinha" : "Mais barato (bruto)"}</Eyebrow>
-            <Tag>{QUALITY[best.dataQuality] || best.dataQuality}</Tag>
+            <GateStatusBadge status={best.dataQuality} />
           </div>
           <div className="mt-3 text-6xl font-semibold tracking-tightest text-ink"><CountUp value={best.priceBrl} format={brl} /></div>
           <div className="mt-2 text-sm text-ink-soft">{[best.airline || best.source, stopsTxt(best.stops), best.duration].filter(Boolean).join(" · ")}</div>

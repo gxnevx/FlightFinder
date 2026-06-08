@@ -1,16 +1,4 @@
 "use client";
-
-import SearchForm from "@/components/SearchForm";
-import { Eyebrow } from "@/components/ui";
-
-export default function SearchPage() {
-  return (
-    <div className="space-y-12 pt-16">
-      <div>
-        <Eyebrow>Busca</Eyebrow>
-        <h1 className="mt-4 text-4xl font-semibold tracking-tightest text-ink sm:text-5xl">Para onde vamos?</h1>
-      </div>
-      <SearchForm endpoint="/api/search" />
-    </div>
-  );
-}
+import {useState} from "react"; import SearchForm from "@/components/SearchForm"; import {CommandBar,GateStatusBadge,MetricPanel,RouteCanvas} from "@/components/terminal";
+const examples=["são paulo para lisboa em setembro, 5 dias","me ache europa barata em outubro","fim de semana barato saindo de sp"];
+export default function SearchPage(){const [open,setOpen]=useState(false),[query,setQuery]=useState("");return <div className="space-y-14 page-shell"><header className="max-w-5xl"><div className="section-label">Command interface / natural language</div><h1 className="mt-5 text-6xl font-semibold leading-[.92] sm:text-8xl">descreva a fuga.<br/><span className="text-accent-blue">o agente traça a rota.</span></h1></header><section className="asym-grid"><div className="terminal-panel p-4 sm:p-7"><div className="flex items-center gap-3 border-b border-line pb-5"><span className="grid h-11 w-11 place-items-center bg-ink text-accent-lime">⌘</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="me ache uma viagem imperdível saindo de são paulo" className="min-w-0 flex-1 bg-transparent text-lg text-ink outline-none sm:text-2xl"/><button onClick={()=>setOpen(true)} className="btn">interpretar ↗</button></div><div className="mt-4 flex flex-wrap gap-2">{examples.map(e=><button key={e} onClick={()=>setQuery(e)} className="chip border-line bg-white/60 text-ink-faint hover:border-accent-blue hover:text-ink">{e}</button>)}</div>{query&&<div className="mt-7 grid gap-3 sm:grid-cols-3"><MetricPanel label="origin detected" value="SAO" note="GRU · CGH · VCP"/><MetricPanel label="flexibility" value="±03" note="days accepted"/><MetricPanel label="sources" value="03" note="live + baseline"/></div>}</div><RouteCanvas mode={query?"searching":"idle"}/></section><button className="btn-line" onClick={()=>setOpen(!open)}>{open?"ocultar parâmetros técnicos":"abrir parâmetros técnicos"}</button>{open&&<section className="terminal-panel p-5 sm:p-8"><div className="mb-8 flex items-center justify-between"><div className="section-label">resolved search parameters</div><GateStatusBadge status="validating"/></div><SearchForm endpoint="/api/search"/></section>}</div>}
