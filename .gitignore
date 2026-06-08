@@ -1,0 +1,11 @@
+# Dependencies / installs (provisioned per-session by the SessionStart hook)
+node_modules/
+
+# agent-browser runtime state lives outside the repo (~/.agent-browser), but
+# guard against accidental local copies / browser downloads.
+.agent-browser/
+browsers/
+
+# Logs & OS cruft
+*.log
+.DS_Store

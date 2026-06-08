@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "AGENT_BROWSER_EXECUTABLE_PATH": "/root/.agent-browser/chrome",
+    "AGENT_BROWSER_IGNORE_HTTPS_ERRORS": "true",
+    "AGENT_BROWSER_ARGS": "--no-sandbox"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(agent-browser:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/setup-agent-browser.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
