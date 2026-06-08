@@ -1,5 +1,17 @@
-# Dependências / instalados pelo hook SessionStart (container efêmero)
+# --- Node / Next.js (web app) ---
 node_modules/
+.next/
+out/
+.vercel/
+next-env.d.ts
+*.tsbuildinfo
+
+# --- Segredos: NUNCA commitar .env (use o painel do Vercel) ---
+.env
+.env.*
+!.env.example
+
+# --- Python core (instalado pelo hook SessionStart) ---
 __pycache__/
 *.pyc
 
@@ -7,7 +19,7 @@ __pycache__/
 tools/usd-brl/target/
 tools/flightfinder/data/
 
-# Estado de runtime do agent-browser (fora do repo, mas por garantia)
+# Estado de runtime do agent-browser
 .agent-browser/
 browsers/
 

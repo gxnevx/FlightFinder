@@ -122,6 +122,27 @@ agent-browser --session t open "https://www.google.com/travel/flights?q=Flights+
   && agent-browser --session t wait --load networkidle && agent-browser --session t snapshot -i && agent-browser --session t close
 ```
 
+## App web (Next.js / Vercel / Supabase)
+
+A UI fica na raiz (Next.js 14 app router, TS, Tailwind, glassmorphism, 3D via
+react-three-fiber) e roda em serverless do Vercel. O core Python (`tools/`) NÃO
+roda no Vercel: as fontes de browser/scraper (google-flights, fast-flights, LetsFG)
+caem em mock marcado como demo, com adapter pronto para um worker externo
+(`FLIGHT_WORKER_URL`). Câmbio, aeroportos, visto, clima e consenso são
+reimplementados em TypeScript (`lib/`) e rodam de verdade.
+
+- Chaves: SÓ via env no painel do Vercel (`process.env`); nunca no código, README
+  ou logs. Públicas: `NEXT_PUBLIC_SUPABASE_*`. Servidor:
+  `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_SECRET_KEY`, `SUPABASE_JWT_SECRET`,
+  `POSTGRES_*`. Opcionais grátis: `AWESOMEAPI_TOKEN`, `TRAVELPAYOUTS_TOKEN`,
+  `AVIATIONSTACK_TOKEN`. Lista completa em `.env.example`.
+- Supabase: `lib/supabase/{client,server,admin}.ts` (admin = service role,
+  `server-only`). Schema em `supabase/migrations/0001_init.sql` (RLS habilitado,
+  acesso só via API routes server-side). Sem Supabase, histórico fica em memória.
+- API: `/api/health`, `/api/sources`, `/api/search`, `/api/lucky`,
+  `/api/advanced-search`, `/api/evals/run`, `/api/preferences`, `/api/history/*`.
+- Build: `npm install && npm run build` (lint não bloqueia o build).
+
 ## Roadmap (planejado, ainda não implementado)
 
 - Otimizador: matriz de datas flexíveis (+/- dias), aeroportos alternativos por
